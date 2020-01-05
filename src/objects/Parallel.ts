@@ -32,9 +32,9 @@ class Parallel extends TanObject {
     this.points.p4.x = cX - (p4.x - cX);
   }
   draw(ctx: CanvasRenderingContext2D) {
+    super.draw(ctx);
     this.updateCentroid();
     ctx.beginPath();
-    // ctx.lineWidth = 2;
     const { p1, p2, p3, p4 } = this.points;
     ctx.moveTo(p1.x, p1.y);
     ctx.lineTo(p2.x, p2.y);

@@ -24,11 +24,9 @@ class Square extends TanObject {
   }
   draw(ctx: CanvasRenderingContext2D) {
     super.draw(ctx);
-
     this.updateCentroid();
     const { p1, p2, p3, p4 } = this.points;
     ctx.beginPath();
-    // ctx.lineWidth = 2;
     ctx.moveTo(p1.x, p1.y);
     ctx.lineTo(p2.x, p2.y);
     ctx.lineTo(p3.x, p3.y);

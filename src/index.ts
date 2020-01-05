@@ -2,30 +2,39 @@ import BaseTriangle from "./objects/BaseTriangle";
 import Square from "./objects/Square";
 import Parallel from "./objects/Parallel";
 
+//// window.addEventListener("touchmove", () => {});
+// Prevent window from zooming.
+document.addEventListener(
+  "touchmove",
+  e => {
+    e.preventDefault();
+  },
+  { passive: false }
+);
+
 interface XYPair {
   x: number;
   y: number;
 }
 let dpi = window.devicePixelRatio;
 if (typeof window.orientation !== "undefined") {
-  dpi = 1;
+  dpi = 2;
 }
 const canvas = document.getElementById("app") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d");
 canvas.oncontextmenu = e => e.preventDefault();
-let unit: number = 600;
+let unit: number = 400;
 function setCanvasSize() {
   canvas.width = document.documentElement.clientWidth * dpi;
   canvas.height = document.documentElement.clientHeight * dpi;
 }
 setCanvasSize();
-ctx.lineWidth = 3;
-ctx.strokeStyle = "#222";
-
 document.addEventListener("keydown", e => {
-  shapes[selShpIndex].move(e);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  DrawObjects();
+  if (selShpIndex) {
+    shapes[selShpIndex].move(e);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    DrawObjects();
+  }
 });
 // canvas.addEventListener("click", e => handleCanvasClick(e));
 
@@ -124,6 +133,8 @@ const handleInputMove = (e: MouseEvent | TouchEvent) => {
     dragStart = dragEnd;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     DrawObjects();
+    checkShapeDist();
+    checkEdgeDist();
   }
 };
 const handleInputEnd = () => {
@@ -134,8 +145,13 @@ const handleInputEnd = () => {
   if (drag) {
     drag = false;
     selShpIndex = null;
-    shapes[shapes.length - 1].stroke = "black";
-    shapes[shapes.length - 1].draw(ctx);
+    shapes.forEach(shape => {
+      shape.stroke = "black";
+      shape.lineWidth = 4;
+    });
+    DrawObjects();
+    // shapes[shapes.length - 1].stroke = "black";
+    // shapes[shapes.length - 1].draw(ctx);
   }
 };
 // canvas.addEventListener("mousemove", handleInputMove);
@@ -150,8 +166,55 @@ canvas.addEventListener("touchend", handleInputEnd);
 // });
 
 const shapes = [];
+const selDistToShps: number[] = [];
 let selShpIndex: number;
-
+function getDist(centA: XYPair, centB: XYPair): number {
+  return Math.abs(
+    Math.sqrt(Math.pow(centB.x - centA.x, 2) + Math.pow(centB.y - centA.y, 2))
+  );
+}
+function checkShapeDist() {
+  selDistToShps.length = 0;
+  shapes.forEach(shape => {
+    if (shape !== shapes[selShpIndex]) {
+      selDistToShps.push(getDist(shapes[selShpIndex].centroid, shape.centroid));
+    }
+  });
+  shapes.forEach((shape, index) => {
+    if (shape !== shapes[selShpIndex]) {
+      if (selDistToShps[index] < unit / 3) {
+        shape.stroke = "blue";
+        shape.lineWidth = 6;
+      } else {
+        shape.stroke = "black";
+        shape.lineWidth = 4;
+      }
+    }
+  });
+  DrawObjects();
+}
+function checkEdgeDist() {
+  shapes.forEach(shape => {
+    const dist = getDist(shapes[selShpIndex].centroid, shape.centroid);
+    if (shapes[selShpIndex] !== shape && dist < 200) {
+      if (shapes[selShpIndex].edges[0].slope === shape.edges[0].slope) {
+        ctx.beginPath();
+        ctx.moveTo(shape.edges[0].pA.x, shape.edges[0].pA.y);
+        ctx.lineTo(shape.edges[0].pB.x, shape.edges[0].pB.y);
+        ctx.strokeStyle = "orange";
+        ctx.stroke();
+        shapes[selShpIndex].translate();
+      }
+      // shapes[selShpIndex].edges.forEach(edge => {
+      //   if (edge.slope === shape.edges[0].slope) {
+      //     shape.stroke = "orange";
+      //     shape.draw(ctx);
+      //   }
+      // });
+    }
+  });
+  // console.count("Checking Egde Distance");
+}
 function createTamObjects() {
   shapes.push(new BaseTriangle(unit, "rgb(230, 30, 70)"));
   shapes.push(new BaseTriangle(unit, "rgb(235, 200, 45)"));
@@ -220,3 +283,4 @@ window.onresize = () => {
 };
 createTamObjects();
 setInitialLayout();
+console.log(getDist({ x: 10, y: 20 }, { x: -20, y: -20 }));

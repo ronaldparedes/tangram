@@ -21,12 +21,14 @@ class BaseTriangle extends TanObject {
         y: (this.unit * Math.sqrt(2)) / 2
       }
     };
+    this.setEdges();
     this.updateCentroid();
+    console.table(this.edges);
   }
   draw(ctx: CanvasRenderingContext2D) {
+    super.draw(ctx);
     this.updateCentroid();
     ctx.beginPath();
-    // ctx.lineWidth = 2;
     const { p1, p2, p3 } = this.points;
     ctx.moveTo(p1.x, p1.y);
     ctx.lineTo(p2.x, p2.y);
@@ -36,6 +38,33 @@ class BaseTriangle extends TanObject {
     ctx.strokeStyle = this.stroke;
     ctx.fill();
     ctx.stroke();
+  }
+  rotate(theta: number) {
+    super.rotate(theta);
+    this.setEdges();
+    // console.table(this.edges);
+  }
+  setEdges() {
+    const { p1, p2, p3 } = this.points;
+    this.edges.length = 0;
+    this.edges.push({
+      pA: p1,
+      pB: p2,
+      slope: this.updateSlope(p1, p2)
+    });
+    this.edges.push({
+      pA: p2,
+      pB: p3,
+      slope: this.updateSlope(p2, p3)
+    });
+    this.edges.push({
+      pA: p3,
+      pB: p1,
+      slope: this.updateSlope(p3, p1)
+    });
+  }
+  updateSlope(pA: XYPair, pB: XYPair): number {
+    return Math.round(pB.y - pA.y) / Math.round(pB.x - pA.x);
   }
 }
 

@@ -13,23 +13,29 @@ interface QuadPoints {
   p3: XYPair;
   p4: XYPair;
 }
+interface Edge {
+  pA: XYPair;
+  pB: XYPair;
+  slope: number;
+}
 
 class TanObject {
   unit: number;
   points: TriPoints | QuadPoints;
+  edges: Edge[] = [];
   centroid: XYPair;
   fill: string;
   stroke: string;
-  constructor(
-    unit: number = 1,
-    fill: string = "#000",
-    stroke: string = "#000"
-  ) {
+  lineWidth: number;
+  constructor(unit = 1, fill = "#000", stroke = "#000", lineWidth = 4) {
     this.unit = unit;
     this.fill = fill;
     this.stroke = stroke;
+    this.lineWidth = lineWidth;
   }
-  draw(ctx: CanvasRenderingContext2D) {}
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.lineWidth = this.lineWidth;
+  }
   updateCentroid() {
     let xSum = 0;
     let ySum = 0;
