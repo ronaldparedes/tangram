@@ -1,8 +1,8 @@
 import BaseTriangle from "./objects/BaseTriangle";
 import Square from "./objects/Square";
 import Parallel from "./objects/Parallel";
+import TWEEN from "./lib/tween.umd";
 
-//// window.addEventListener("touchmove", () => {});
 // Prevent window from zooming.
 document.addEventListener(
   "touchmove",
@@ -23,6 +23,7 @@ if (typeof window.orientation !== "undefined") {
 const canvas = document.getElementById("app") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d");
 canvas.oncontextmenu = e => e.preventDefault();
+// let unit: number = 560 / Math.sqrt(2);
 let unit: number = 400;
 function setCanvasSize() {
   canvas.width = document.documentElement.clientWidth * dpi;
@@ -36,7 +37,6 @@ document.addEventListener("keydown", e => {
     DrawObjects();
   }
 });
-// canvas.addEventListener("click", e => handleCanvasClick(e));
 
 const handleCanvasClick = (e: MouseEvent) => {
   const clkdPt = { x: e.clientX * dpi, y: e.clientY * dpi };
@@ -68,7 +68,7 @@ const handleCanvasClick = (e: MouseEvent) => {
 let drag: boolean = false;
 let dragStart: XYPair;
 let dragEnd: XYPair;
-
+let isAnimating: boolean = false;
 let latestTap = 0;
 let timer: number = null;
 const handleInputStart = (e: MouseEvent | TouchEvent) => {
@@ -83,9 +83,28 @@ const handleInputStart = (e: MouseEvent | TouchEvent) => {
   }
   timer = setTimeout(() => {
     if (shapes[selShpIndex].flip !== undefined) {
-      shapes[selShpIndex].flip();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      DrawObjects();
+      isAnimating = true;
+      let delta = { value: -1 };
+      let index = selShpIndex;
+      let startPoints: XYPair[] = [];
+      for (const point in shapes[index].points) {
+        startPoints.push(
+          JSON.parse(JSON.stringify(shapes[index].points[point]))
+        );
+      }
+      const tween = new TWEEN.Tween(delta) // Create a new tween that modifies 'coords'.
+        .to({ value: 1 }, 300)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .onUpdate(() => {
+          shapes[index].flip(delta.value, startPoints);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          DrawObjects();
+        })
+        .onComplete(() => {
+          isAnimating = false;
+        })
+        .start(); // Start the tween immediately.
+      requestAnimationFrame(animate);
     }
   }, 500);
   if (selShpIndex !== null) {
@@ -100,41 +119,72 @@ const handleInputStart = (e: MouseEvent | TouchEvent) => {
   let timeSince = now - latestTap;
   if (timeSince < 300 && timeSince > 0) {
     if (selShpIndex !== null) {
-      shapes[selShpIndex].rotate((45 * Math.PI) / 180);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      DrawObjects();
+      /* Start Rotation Animation */
+      let rotAngle = { theta: 0 };
+      let index = selShpIndex;
+      let prevRotAngle = 0;
+      console.log(
+        `${shapes[index].name}, Cent:${shapes[index].centroid.x}, ${shapes[index].centroid.y}`
+      );
+      console.table(shapes[index].points);
+
+      const tween = new TWEEN.Tween(rotAngle) // Create a new tween that modifies 'coords'.
+        .to({ theta: (45 * Math.PI) / 180 }, 300)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .onUpdate(() => {
+          shapes[index].rotate(rotAngle.theta - prevRotAngle);
+          prevRotAngle = rotAngle.theta;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          DrawObjects();
+        })
+        .onComplete(() => {
+          console.log(
+            `${shapes[index].name}, Cent:${shapes[index].centroid.x}, ${shapes[index].centroid.y}`
+          );
+          console.table(shapes[index].points);
+        })
+        .start(); // Start the tween immediately.
+      requestAnimationFrame(animate);
+      /* End Rotation Animation */
     }
   }
   latestTap = now;
 };
-// canvas.addEventListener("mousedown", handleInputStart);
-canvas.addEventListener("touchstart", handleInputStart);
-const handleInputMove = (e: MouseEvent | TouchEvent) => {
-  if (timer) {
-    clearTimeout(timer);
-    timer = null;
-  }
-  let evt: MouseEvent | Touch;
-  if (e.type == "touchmove") {
-    evt = (e as TouchEvent).touches[0];
-  } else {
-    evt = e as MouseEvent;
-  }
+/* Run animation Frame */
+function animate(time) {
+  requestAnimationFrame(animate);
+  TWEEN.update(time);
+}
+const touchCapable: boolean = window.ontouchstart === undefined ? false : true;
 
-  if (drag) {
-    dragEnd = {
-      x: evt.clientX * dpi,
-      y: evt.clientY * dpi
-    };
-    shapes[selShpIndex].translate({
-      x: dragEnd.x - dragStart.x,
-      y: dragEnd.y - dragStart.y
-    });
-    dragStart = dragEnd;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    DrawObjects();
-    checkShapeDist();
-    checkEdgeDist();
+const handleInputMove = (e: MouseEvent | TouchEvent) => {
+  if (!isAnimating) {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    let evt: MouseEvent | Touch;
+    if (e.type == "touchmove") {
+      evt = (e as TouchEvent).touches[0];
+    } else {
+      evt = e as MouseEvent;
+    }
+
+    if (drag) {
+      dragEnd = {
+        x: evt.clientX * dpi,
+        y: evt.clientY * dpi
+      };
+      shapes[selShpIndex].translate({
+        x: dragEnd.x - dragStart.x,
+        y: dragEnd.y - dragStart.y
+      });
+      dragStart = dragEnd;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      DrawObjects();
+      checkShapeDist();
+      checkEdgeDist();
+    }
   }
 };
 const handleInputEnd = () => {
@@ -154,16 +204,15 @@ const handleInputEnd = () => {
     // shapes[shapes.length - 1].draw(ctx);
   }
 };
-// canvas.addEventListener("mousemove", handleInputMove);
-canvas.addEventListener("touchmove", handleInputMove);
-canvas.addEventListener("touchend", handleInputEnd);
-// canvas.addEventListener("mouseup", () => {
-//   if (drag) {
-//     drag = false;
-//     selShpIndex = null;
-//     DrawObjects();
-//   }
-// });
+canvas.addEventListener(
+  touchCapable ? "touchstart" : "mousedown",
+  handleInputStart
+);
+canvas.addEventListener(
+  touchCapable ? "touchmove" : "mousemove",
+  handleInputMove
+);
+canvas.addEventListener(touchCapable ? "touchend" : "mouseup", handleInputEnd);
 
 const shapes = [];
 const selDistToShps: number[] = [];
@@ -197,32 +246,30 @@ function checkEdgeDist() {
   shapes.forEach(shape => {
     const dist = getDist(shapes[selShpIndex].centroid, shape.centroid);
     if (shapes[selShpIndex] !== shape && dist < 200) {
-      if (shapes[selShpIndex].edges[0].slope === shape.edges[0].slope) {
-        ctx.beginPath();
-        ctx.moveTo(shape.edges[0].pA.x, shape.edges[0].pA.y);
-        ctx.lineTo(shape.edges[0].pB.x, shape.edges[0].pB.y);
-        ctx.strokeStyle = "orange";
-        ctx.stroke();
-        shapes[selShpIndex].translate();
+      if (shapes[selShpIndex].edges.slope !== undefined) {
+        if (shapes[selShpIndex].edges[0].slope === shape.edges[0].slope) {
+          ctx.beginPath();
+          ctx.moveTo(shape.edges[0].pA.x, shape.edges[0].pA.y);
+          ctx.lineTo(shape.edges[0].pB.x, shape.edges[0].pB.y);
+          ctx.strokeStyle = "orange";
+          ctx.stroke();
+          shapes[selShpIndex].translate();
+        }
       }
-      // shapes[selShpIndex].edges.forEach(edge => {
-      //   if (edge.slope === shape.edges[0].slope) {
-      //     shape.stroke = "orange";
-      //     shape.draw(ctx);
-      //   }
-      // });
     }
   });
   // console.count("Checking Egde Distance");
 }
 function createTamObjects() {
-  shapes.push(new BaseTriangle(unit, "rgb(230, 30, 70)"));
-  shapes.push(new BaseTriangle(unit, "rgb(235, 200, 45)"));
-  shapes.push(new BaseTriangle(unit / 2, "rgb(85, 70, 180)"));
-  shapes.push(new BaseTriangle(unit / 2, "rgb(220, 130, 180)"));
-  shapes.push(new BaseTriangle((unit * Math.sqrt(2)) / 2, "rgb(25, 150, 225)"));
-  shapes.push(new Square(unit, "rgb(100, 200, 165)"));
-  shapes.push(new Parallel(unit, "rgb(140, 200, 50)"));
+  shapes.push(new BaseTriangle("LgTriA", unit, "rgb(230, 30, 70)"));
+  shapes.push(new BaseTriangle("LgTriB", unit, "rgb(235, 200, 45)"));
+  shapes.push(new BaseTriangle("SmTriA", unit / 2, "rgb(85, 70, 180)"));
+  shapes.push(new BaseTriangle("SmTriB", unit / 2, "rgb(220, 130, 180)"));
+  shapes.push(
+    new BaseTriangle("MdTri", (unit * Math.sqrt(2)) / 2, "rgb(25, 150, 225)")
+  );
+  shapes.push(new Square("Square", unit, "rgb(100, 200, 165)"));
+  shapes.push(new Parallel("Parallel", unit, "rgb(140, 200, 50)"));
   // shapes.push(new BaseTriangle(unit / 8, "rgb(100, 255, 180)"));
 }
 function DrawObjects() {
@@ -268,11 +315,6 @@ function setInitialLayout() {
     x: canvas.width / 2 - unit * (1 / 2),
     y: canvas.height / 2 + unit * (1 / 4)
   });
-  // shapes[7].translate({
-  //   x: canvas.width / 2,
-  //   y: canvas.height / 2
-  // });
-  // shapes[7].stroke = "red";
   DrawObjects();
 }
 window.onresize = () => {
@@ -283,4 +325,3 @@ window.onresize = () => {
 };
 createTamObjects();
 setInitialLayout();
-console.log(getDist({ x: 10, y: 20 }, { x: -20, y: -20 }));

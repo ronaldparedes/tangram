@@ -20,6 +20,7 @@ interface Edge {
 }
 
 class TanObject {
+  name: string;
   unit: number;
   points: TriPoints | QuadPoints;
   edges: Edge[] = [];
@@ -27,7 +28,14 @@ class TanObject {
   fill: string;
   stroke: string;
   lineWidth: number;
-  constructor(unit = 1, fill = "#000", stroke = "#000", lineWidth = 4) {
+  constructor(
+    name: string,
+    unit = 1,
+    fill = "#000",
+    stroke = "#000",
+    lineWidth = 4
+  ) {
+    this.name = name;
     this.unit = unit;
     this.fill = fill;
     this.stroke = stroke;
@@ -35,6 +43,16 @@ class TanObject {
   }
   draw(ctx: CanvasRenderingContext2D) {
     ctx.lineWidth = this.lineWidth;
+    ctx.beginPath();
+    ctx.moveTo(this.points.p1.x, this.points.p1.y);
+    for (const point in this.points) {
+      ctx.lineTo(this.points[point].x, this.points[point].y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = this.fill;
+    ctx.strokeStyle = this.stroke;
+    ctx.fill();
+    ctx.stroke();
   }
   updateCentroid() {
     let xSum = 0;
@@ -49,42 +67,13 @@ class TanObject {
       y: ySum / pointsLength
     };
   }
-  move(e: KeyboardEvent) {
-    const moveAmout = e.shiftKey ? 25 : 1;
-    switch (e.key) {
-      case "ArrowUp":
-        for (const point in this.points) {
-          this.points[point].y -= moveAmout;
-        }
-        break;
-      case "ArrowDown":
-        for (const point in this.points) {
-          this.points[point].y += moveAmout;
-        }
-        break;
-      case "ArrowLeft":
-        for (const point in this.points) {
-          this.points[point].x -= moveAmout;
-        }
-        break;
-      case "ArrowRight":
-        for (const point in this.points) {
-          this.points[point].x += moveAmout;
-        }
-        break;
-      case "r" || "R":
-        this.rotate((45 * Math.PI) / 180);
-        break;
-      default:
-        break;
-    }
-    this.updateCentroid();
-  }
+
   translate(deltaXY: XYPair) {
     for (const point in this.points) {
       this.points[point].x += deltaXY.x;
       this.points[point].y += deltaXY.y;
     }
+    this.updateCentroid();
   }
   rotate(theta: number) {
     //* ((𝑥1−𝑥0)cos(𝜃)+(𝑦1−𝑦0)sin(𝜃)+𝑥0,
@@ -105,5 +94,15 @@ class TanObject {
       this.points[point] = rotatePoint(this.points[point]);
     }
   }
+  flip(delta: number, startPoints: XYPair[]) {
+    const cX = this.centroid.x;
+    this.points.p1.x = cX * delta - (startPoints[0].x * delta - cX);
+    this.points.p2.x = cX * delta - (startPoints[1].x * delta - cX);
+    this.points.p3.x = cX * delta - (startPoints[2].x * delta - cX);
+    if ("p4" in this.points) {
+      this.points.p4.x = cX * delta - (startPoints[3].x * delta - cX);
+    }
+  }
 }
+
 export default TanObject;

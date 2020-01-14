@@ -3,16 +3,10 @@ interface XYPair {
   x: number;
   y: number;
 }
-interface TriPoints {
-  p1: XYPair;
-  p2: XYPair;
-  p3: XYPair;
-}
 
 class BaseTriangle extends TanObject {
-  points: TriPoints;
-  constructor(unit: number, fill: string) {
-    super(unit, fill);
+  constructor(name: string, unit: number, fill: string) {
+    super(name, unit, fill);
     this.points = {
       p1: { x: 0, y: 0 },
       p2: { x: 0, y: (this.unit * Math.sqrt(2)) / 2 },
@@ -23,26 +17,10 @@ class BaseTriangle extends TanObject {
     };
     this.setEdges();
     this.updateCentroid();
-    console.table(this.edges);
-  }
-  draw(ctx: CanvasRenderingContext2D) {
-    super.draw(ctx);
-    this.updateCentroid();
-    ctx.beginPath();
-    const { p1, p2, p3 } = this.points;
-    ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(p2.x, p2.y);
-    ctx.lineTo(p3.x, p3.y);
-    ctx.closePath();
-    ctx.fillStyle = this.fill;
-    ctx.strokeStyle = this.stroke;
-    ctx.fill();
-    ctx.stroke();
   }
   rotate(theta: number) {
     super.rotate(theta);
     this.setEdges();
-    // console.table(this.edges);
   }
   setEdges() {
     const { p1, p2, p3 } = this.points;
