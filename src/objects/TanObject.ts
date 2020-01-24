@@ -1,18 +1,22 @@
-interface XYPair {
+// interface XYPair {
+//   x: number;
+//   y: number;
+// }
+type XYPair = {
   x: number;
   y: number;
-}
-interface TriPoints {
+};
+type TriPoints = {
   p1: XYPair;
   p2: XYPair;
   p3: XYPair;
-}
-interface QuadPoints {
+};
+type QuadPoints = {
   p1: XYPair;
   p2: XYPair;
   p3: XYPair;
   p4: XYPair;
-}
+};
 interface Edge {
   pA: XYPair;
   pB: XYPair;
@@ -94,13 +98,14 @@ class TanObject {
       this.points[point] = rotatePoint(this.points[point]);
     }
   }
-  flip(delta: number, startPoints: XYPair[]) {
+  flip(delta: number, startPoints: any) {
+    //startPoints: XYPair[]) {
     const cX = this.centroid.x;
-    this.points.p1.x = cX * delta - (startPoints[0].x * delta - cX);
-    this.points.p2.x = cX * delta - (startPoints[1].x * delta - cX);
-    this.points.p3.x = cX * delta - (startPoints[2].x * delta - cX);
+    this.points.p1.x = cX * delta - (startPoints.p1.x * delta - cX);
+    this.points.p2.x = cX * delta - (startPoints.p2.x * delta - cX);
+    this.points.p3.x = cX * delta - (startPoints.p3.x * delta - cX);
     if ("p4" in this.points) {
-      this.points.p4.x = cX * delta - (startPoints[3].x * delta - cX);
+      this.points.p4.x = cX * delta - (startPoints.p4.x * delta - cX);
     }
   }
 }

@@ -3,6 +3,10 @@
   <head>
     <title>Tangram Game</title>
     <meta charset="UTF-8" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Indie+Flower&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="./src/styles.css" />
     <meta
       name="viewport"
@@ -11,7 +15,14 @@
   </head>
 
   <body>
-    <canvas id="app"></canvas>
+    <div class="wrap">
+      <h3>
+        Click and hold to flip horizontally <br />
+        Double Click/Tap to rotate counterclockwise <br />
+        Click/Tap hold and move to move around.
+      </h3>
+      <canvas id="app"></canvas>
+    </div>
     <script src="//unpkg.com/prevent-pull-refresh"></script>
     <script src="src/index.ts"></script>
   </body>

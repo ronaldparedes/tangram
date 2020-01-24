@@ -5,12 +5,32 @@
   "main": "index.html",
   "scripts": {
     "start": "parcel index.html --open",
-    "build": "parcel build index.html"
+    "build": "parcel build index.html",
+    "test": "jest --watch "
   },
   "dependencies": {},
   "devDependencies": {
+    "@types/jest": "^24.9.0",
+    "jest": "^24.9.0",
+    "jest-canvas-mock": "^2.2.0",
     "parcel-bundler": "^1.6.1",
+    "ts-jest": "^24.3.0",
     "typescript": "^3.7.4"
   },
-  "keywords": []
+  "keywords": [],
+  "jest": {
+    "setupFiles": [
+      "<rootDir>/jest/setup.js",
+      "jest-canvas-mock"
+    ],
+    "transform": {
+      ".(ts|tsx)": "<rootDir>/node_modules/ts-jest/preprocessor.js"
+    },
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ]
+  }
 }
