@@ -19,4 +19,4 @@ var t,n=arguments[3],e=require("process");function i(t){return(i="function"==typ
 },{"./BaseTriangle":"yglc","./Square":"Du5M","./Parallel":"cqiq","../lib/tween.umd":"K2Ra"}],"B6dB":[function(require,module,exports) {
 "use strict";var e=this&&this.__importDefault||function(e){return e&&e.__esModule?e:{default:e}};Object.defineProperty(exports,"__esModule",{value:!0});var t=e(require("./objects/TanGame"));document.addEventListener("touchmove",function(e){e.preventDefault()},{passive:!1});var n=document.getElementById("app"),a=new t.default(n,400);a.initGame(),window.onresize=function(){a.setCanvasSize(),a.ctx.clearRect(0,0,n.width,n.height),a.drawObjects()};
 },{"./objects/TanGame":"D6Wl"}]},{},["B6dB"], null)
-//# sourceMappingURL=/src.45aee7e9.js.map
+//# sourceMappingURL=/TanGram/src.45aee7e9.js.map
