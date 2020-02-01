@@ -1,11 +1,12 @@
 import BaseTriangle from "./BaseTriangle";
 import Square from "./Square";
 import Parallel from "./Parallel";
-import TWEEN from "../lib/tween.umd";
-interface XYPair {
+import { Tween, Easing, update as tweenUpdate } from "es6-tween";
+type XYPair = {
   x: number;
   y: number;
-}
+};
+
 export default class TanGame {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
@@ -14,6 +15,8 @@ export default class TanGame {
   selDistToShps: number[] = [];
   unit: number;
   dpi: number;
+  isAnimating: boolean = false;
+  initialLayout = [];
   constructor(canvasElem: HTMLCanvasElement, unit: number) {
     this.dpi = window.devicePixelRatio;
     if (typeof window.orientation !== "undefined") {
@@ -32,6 +35,11 @@ export default class TanGame {
     this.setHandlers();
     this.createTamObjects();
     this.setInitialLayout();
+    // this.shapes.forEach(shape => {
+    //   shape.moveTo({ x: 100, y: 100 });
+    // });
+
+    // this.setInitialLayout();
     this.drawObjects();
   }
   setCanvasSize() {
@@ -42,7 +50,6 @@ export default class TanGame {
     let drag: boolean = false;
     let dragStart: XYPair;
     let dragEnd: XYPair;
-    let isAnimating: boolean = false;
     let latestTap = 0;
     let timer: number = null;
     const touchCapable: boolean =
@@ -92,30 +99,11 @@ export default class TanGame {
       if (!handleCanvasClick(evt)) {
         return;
       }
+      let selShape = this.shapes[this.selShpIndex];
       // Run Flip animation on shape if shape is clicked/touched for at least 500ms
       timer = setTimeout(() => {
-        isAnimating = true;
-        let delta = { value: -1 };
-        let index = this.selShpIndex;
-        let startPoints: object = {};
-        for (const point in this.shapes[index].points) {
-          startPoints[point] = { ...this.shapes[index].points[point] };
-        }
-        const tween = new TWEEN.Tween(delta) // Create a new tween that modifies 'coords'.
-          .to({ value: 1 }, 300)
-          .easing(TWEEN.Easing.Quadratic.Out)
-          .onUpdate(() => {
-            this.shapes[index].flip(delta.value, startPoints);
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.drawObjects();
-          })
-          .onComplete(() => {
-            isAnimating = false;
-          })
-          .start(); // Start the tween immediately.
-        requestAnimationFrame(this.animate);
+        this.animFlipShape([{ shape: selShape }], 300);
       }, 500);
-      // If not flipped, check if shape is selected and start translate code
       if (this.selShpIndex !== null) {
         dragStart = {
           x: evt.clientX * this.dpi,
@@ -129,29 +117,20 @@ export default class TanGame {
       if (timeSince < 300 && timeSince > 0) {
         if (this.selShpIndex !== null) {
           /* Start Rotation Animation */
-          let rotAngle = { theta: 0 };
-          let index = this.selShpIndex;
-          let prevRotAngle = 0;
-
-          const tween = new TWEEN.Tween(rotAngle) // Create a new tween that modifies 'coords'.
-            .to({ theta: (45 * Math.PI) / 180 }, 300)
-            .easing(TWEEN.Easing.Quadratic.Out)
-            .onUpdate(() => {
-              this.shapes[index].rotate(rotAngle.theta - prevRotAngle);
-              prevRotAngle = rotAngle.theta;
-              this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-              this.drawObjects();
-            })
-            .onComplete(() => {})
-            .start(); // Start the tween immediately.
-          requestAnimationFrame(this.animate);
+          this.animRotShape([
+            {
+              shape: selShape,
+              rotPos:
+                selShape.rotationPos + 1 === 9 ? 1 : selShape.rotationPos + 1
+            }
+          ]);
           /* End Rotation Animation */
         }
       }
       latestTap = now;
     };
     const handleInputMove = (e: MouseEvent | TouchEvent) => {
-      if (!isAnimating) {
+      if (!this.isAnimating) {
         if (timer) {
           clearTimeout(timer);
           timer = null;
@@ -175,8 +154,6 @@ export default class TanGame {
           dragStart = dragEnd;
           this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
           this.drawObjects();
-          // checkShapeDist();
-          // checkEdgeDist();
         }
       }
     };
@@ -187,14 +164,13 @@ export default class TanGame {
       }
       if (drag) {
         drag = false;
+        console.log(this.shapes[this.selShpIndex].rotationPos);
         this.selShpIndex = null;
         this.shapes.forEach(shape => {
           shape.stroke = "black";
           shape.lineWidth = 4;
         });
         this.drawObjects();
-        // shapes[shapes.length - 1].stroke = "black";
-        // shapes[shapes.length - 1].draw(ctx);
       }
     };
     this.canvas.addEventListener(
@@ -225,7 +201,7 @@ export default class TanGame {
     this.shapes.push(
       new BaseTriangle(
         "MdTri",
-        (this.unit * Math.sqrt(2)) / 2,
+        (this.unit * Math.SQRT2) / 2,
         "rgb(25, 150, 225)"
       )
     );
@@ -233,41 +209,165 @@ export default class TanGame {
     this.shapes.push(new Parallel("Parallel", this.unit, "rgb(140, 200, 50)"));
     // shapes.push(new BaseTriangle(this.unit / 8, "rgb(100, 255, 180)"));
   }
+  getShapeIndex(name: string) {
+    let retIndex = null;
+    this.shapes.forEach((shape, index) => {
+      if (shape.name === name) {
+        retIndex = index;
+      }
+    });
+    return retIndex;
+  }
+  animRotShape(shapeOps: { shape: any; rotPos: number }[], time: number = 300) {
+    shapeOps.forEach(shapeOp => {
+      const numOfRot =
+        shapeOp.rotPos - shapeOp.shape.rotationPos < 0
+          ? 8 + shapeOp.rotPos - shapeOp.shape.rotationPos
+          : shapeOp.rotPos - shapeOp.shape.rotationPos;
+      const toAngle = numOfRot * 45;
+      const rotAngle = { theta: 0 };
+      let prevRotAngle = 0;
+      const tween = new Tween(rotAngle)
+        .to({ theta: degToRad(toAngle) }, time)
+        .easing(Easing.Quadratic.Out)
+        .on("update", () => {
+          shapeOp.shape.rotate(rotAngle.theta - prevRotAngle);
+          prevRotAngle = rotAngle.theta;
+        })
+        .on("complete", () => {
+          for (let i = 0; i < numOfRot; i++) {
+            shapeOp.shape.increaseRotPos();
+          }
+        })
+        .start();
+    });
+  }
+  animMoveShape(shapesOps: { shape: any; point: XYPair }[], time: number) {
+    shapesOps.forEach(shapeOp => {
+      const delta = { ...shapeOp.shape.points.p1 };
+      const tween = new Tween(delta)
+        .to({ ...shapeOp.point }, time)
+        .easing(Easing.Quadratic.Out)
+        .on("update", () => {
+          shapeOp.shape.moveTo({ x: delta.x, y: delta.y });
+        })
+        .on("complete", () => {})
+        .start();
+    });
+  }
+  animFlipShape(shapeOps: { shape: any }[], time: number = 300) {
+    this.isAnimating = true;
+    shapeOps.forEach(shapeOp => {
+      let delta = { value: -1 };
+      let startPoints: object = {};
+      for (const point in shapeOp.shape.points) {
+        startPoints[point] = { ...shapeOp.shape.points[point] };
+      }
+      const tween = new Tween(delta)
+        .to({ value: 1 }, time)
+        .easing(Easing.Quadratic.Out)
+        .on("update", () => {
+          shapeOp.shape.flip(delta.value, startPoints);
+        })
+        .on("complete", () => {
+          this.isAnimating = false;
+          const numTo = 2 * ((11 - shapeOp.shape.rotationPos) % 4);
+          for (let i = 0; i < numTo; i++) {
+            shapeOp.shape.increaseRotPos();
+          }
+          shapeOp.shape.isFlipped = !shapeOp.shape.isFlipped;
+        })
+        .start();
+    });
+  }
+
+  animateToShape(
+    shapeProps: { name: string; x: number; y: number; rot: number }[]
+  ) {
+    this.disableEnableBtns();
+    const animTime = 800;
+    const centerX = this.canvas.width / 2;
+    const centerY = this.canvas.height / 2;
+    const shapePropArr = [];
+    shapeProps.forEach(shapeProp => {
+      shapePropArr.push({
+        shape: this.shapes[this.getShapeIndex(shapeProp.name)],
+        point: {
+          x: centerX + this.unit * shapeProp.x,
+          y: centerY + this.unit * shapeProp.y
+        },
+        rotPos: shapeProp.rot
+      });
+    });
+    this.shapes.forEach(shape => {
+      if (shape.isFlipped) {
+        this.animFlipShape([{ shape: shape }], animTime / 4);
+      }
+    });
+    setTimeout(() => {
+      this.animRotShape(shapePropArr, animTime);
+      this.animMoveShape(shapePropArr, animTime);
+    }, animTime / 3);
+    requestAnimationFrame(this.animate);
+  }
   setInitialLayout() {
-    this.shapes[0].rotate(degToRad(135));
-    this.shapes[0].translate({
-      x: this.canvas.width / 2 - this.unit * (72.8 / 128),
-      y: this.canvas.height / 2 - this.unit * (60.4 / 128)
+    const squareShape = [
+      { name: "LgTriA", x: -(1 / 2), y: -(1 / 2), rot: 1 },
+      { name: "LgTriB", x: 1 / 2, y: -(1 / 2), rot: 7 },
+      { name: "SmTriA", x: 1 / 2, y: 0, rot: 5 },
+      { name: "SmTriB", x: -(1 / 4), y: 1 / 4, rot: 3 },
+      { name: "MdTri", x: 1 / 2, y: 0, rot: 8 },
+      { name: "Square", x: 1 / 4, y: -(1 / 4), rot: 1 },
+      { name: "Parallel", x: -(1 / 4), y: 1 / 4, rot: 1 }
+    ];
+    this.animateToShape(squareShape);
+  }
+  setBunnyLayout() {
+    const bunnyShape = [
+      { name: "LgTriA", x: 0, y: 0, rot: 1 },
+      { name: "LgTriB", x: 1 / 2, y: 1 / 2, rot: 8 },
+      { name: "SmTriA", x: -(3.5 / 24), y: -(3 / 4), rot: 6 },
+      { name: "SmTriB", x: -(1 / 2), y: -(3 / 4), rot: 2 },
+      { name: "MdTri", x: 0, y: 1 / 4, rot: 8 },
+      { name: "Square", x: -(1 / 3), y: -(3 / 8), rot: 2 },
+      { name: "Parallel", x: 0, y: -(3 / 4), rot: 2 }
+    ];
+    this.animateToShape(bunnyShape);
+  }
+  setHorseLayout() {
+    const horseShape = [
+      { name: "LgTriA", x: -(17 / 24), y: 0, rot: 2 },
+      { name: "LgTriB", x: 0, y: 0, rot: 1 },
+      { name: "SmTriA", x: -(23 / 24), y: 1 / 4, rot: 3 },
+      { name: "SmTriB", x: 0, y: 3 / 4, rot: 8 },
+      { name: "MdTri", x: -(17 / 24), y: -(8.5 / 24), rot: 3 },
+      { name: "Square", x: 0, y: 0, rot: 6 },
+      { name: "Parallel", x: 1 / 2, y: 1, rot: 3 }
+    ];
+    this.animateToShape(horseShape);
+  }
+  setPersonLayout() {
+    const personShape = [
+      { name: "LgTriA", x: 1 / this.unit, y: 0, rot: 8 },
+      { name: "LgTriB", x: -(1 / 4), y: 1 / 4, rot: 4 },
+      { name: "SmTriA", x: -1, y: 1, rot: 4 },
+      { name: "SmTriB", x: 0, y: 5 / 4, rot: 5 },
+      { name: "MdTri", x: 1 / this.unit, y: 1 / 4, rot: 1 },
+      { name: "Square", x: 0, y: -1, rot: 1 },
+      { name: "Parallel", x: -(29 / 48), y: -(5 / 48), rot: 2 }
+    ];
+    this.animateToShape(personShape);
+  }
+  disableEnableBtns() {
+    const buttons = document.querySelectorAll("button");
+    buttons.forEach(button => {
+      button.disabled = true;
     });
-    this.shapes[1].rotate(degToRad(45));
-    this.shapes[1].translate({
-      x: this.canvas.width / 2 - this.unit * (30.15 / 128),
-      y: this.canvas.height / 2 - this.unit * (103.2 / 128)
-    });
-    this.shapes[2].rotate(degToRad(-45));
-    this.shapes[2].translate({
-      x: this.canvas.width / 2 + this.unit * (38.3 / 128),
-      y: this.canvas.height / 2 - this.unit * (62.3 / 128)
-    });
-    this.shapes[3].rotate(degToRad(225));
-    this.shapes[3].translate({
-      x: this.canvas.width / 2 - this.unit * (15.0 / 128),
-      y: this.canvas.height / 2 - this.unit * (8.9 / 128)
-    });
-    this.shapes[4].rotate(degToRad(90));
-    this.shapes[4].translate({
-      x: this.canvas.width / 2 + this.unit * (21.4 / 128),
-      y: this.canvas.height / 2
-    });
-    this.shapes[5].rotate(degToRad(45));
-    this.shapes[5].translate({
-      x: this.canvas.width / 2 + this.unit * (9.4 / 128),
-      y: this.canvas.height / 2 - this.unit * (22.7 / 128)
-    });
-    this.shapes[6].translate({
-      x: this.canvas.width / 2 - this.unit * (1 / 2),
-      y: this.canvas.height / 2 + this.unit * (1 / 4)
-    });
+    setTimeout(() => {
+      buttons.forEach(button => {
+        button.disabled = false;
+      });
+    }, 850);
   }
   drawObjects() {
     this.shapes.forEach(shape => {
@@ -275,8 +375,10 @@ export default class TanGame {
     });
   }
   animate = (time: number) => {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.drawObjects();
+    tweenUpdate(time);
     requestAnimationFrame(this.animate);
-    TWEEN.update(time);
   };
 }
 

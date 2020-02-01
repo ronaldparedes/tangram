@@ -1,7 +1,3 @@
-// interface XYPair {
-//   x: number;
-//   y: number;
-// }
 type XYPair = {
   x: number;
   y: number;
@@ -17,21 +13,17 @@ type QuadPoints = {
   p3: XYPair;
   p4: XYPair;
 };
-interface Edge {
-  pA: XYPair;
-  pB: XYPair;
-  slope: number;
-}
 
 class TanObject {
   name: string;
   unit: number;
   points: TriPoints | QuadPoints;
-  edges: Edge[] = [];
   centroid: XYPair;
   fill: string;
   stroke: string;
   lineWidth: number;
+  rotationPos: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  isFlipped: boolean;
   constructor(
     name: string,
     unit = 1,
@@ -44,6 +36,8 @@ class TanObject {
     this.fill = fill;
     this.stroke = stroke;
     this.lineWidth = lineWidth;
+    this.rotationPos = 1;
+    this.isFlipped = false;
   }
   draw(ctx: CanvasRenderingContext2D) {
     ctx.lineWidth = this.lineWidth;
@@ -79,6 +73,20 @@ class TanObject {
     }
     this.updateCentroid();
   }
+  moveTo(toPoint: XYPair) {
+    const deltaXY = {
+      x: toPoint.x - this.points.p1.x,
+      y: toPoint.y - this.points.p1.y
+    };
+    for (const point in this.points) {
+      this.points[point].x += deltaXY.x;
+      this.points[point].y += deltaXY.y;
+    }
+    this.updateCentroid();
+  }
+  increaseRotPos() {
+    this.rotationPos === 8 ? (this.rotationPos = 1) : this.rotationPos++;
+  }
   rotate(theta: number) {
     //* ((𝑥1−𝑥0)cos(𝜃)+(𝑦1−𝑦0)sin(𝜃)+𝑥0,
     //* −(𝑥1−𝑥0)sin(𝜃)+(𝑦1−𝑦0)cos(𝜃)+𝑦0)
@@ -98,8 +106,10 @@ class TanObject {
       this.points[point] = rotatePoint(this.points[point]);
     }
   }
-  flip(delta: number, startPoints: any) {
-    //startPoints: XYPair[]) {
+  flip(
+    delta: number,
+    startPoints: { p1: XYPair; p2: XYPair; p3: XYPair; p4?: XYPair }
+  ) {
     const cX = this.centroid.x;
     this.points.p1.x = cX * delta - (startPoints.p1.x * delta - cX);
     this.points.p2.x = cX * delta - (startPoints.p2.x * delta - cX);

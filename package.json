@@ -6,11 +6,13 @@
   "scripts": {
     "start": "parcel index.html --open",
     "build": "parcel build index.html",
-    "test": "jest --watch "
+    "test": "jest --watch ",
+    "predeploy": "rm -rf dist && parcel build index.html --public-url /tangram",
+    "deploy": "gh-pages -d dist"
   },
-  "dependencies": {},
   "devDependencies": {
     "@types/jest": "^24.9.0",
+    "gh-pages": "^2.2.0",
     "jest": "^24.9.0",
     "jest-canvas-mock": "^2.2.0",
     "parcel-bundler": "^1.6.1",
@@ -32,5 +34,8 @@
       "tsx",
       "js"
     ]
+  },
+  "dependencies": {
+    "es6-tween": "^5.5.10"
   }
 }
