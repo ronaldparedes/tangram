@@ -45,14 +45,21 @@ canvas {
   bottom: 100px;
 }
 button {
-  -webkit-appearance: default-button;
+  appearance: none;
   background-color: rgba(219, 112, 147, 0.4);
-  /* background-color: rgba(255, 239, 213, 0.8) */
   border-radius: 10px;
-  border-color: palevioletred;
+  border: 1px solid palevioletred;
   height: auto;
   width: auto;
   font-size: 15px;
+  transition: color 200ms ease-in-out, background-color 200ms ease-in-out;
+  box-shadow: 0 4px 5px 0px rgba(0, 0, 0, 0.14),
+    0 1px 10px 0px rgba(0, 0, 0, 0.12), 0 5px 5px -3px rgba(0, 0, 0, 0.2);
+}
+button:hover {
+  cursor: pointer;
+  color: palevioletred;
+  background-color: rgba(255, 239, 213, 0.4);
 }
 button span {
   font-size: 20px;
