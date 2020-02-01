@@ -10,6 +10,7 @@ document.addEventListener(
 );
 if (window.orientation !== undefined) {
   document.querySelector(".controls").classList.add("mobile");
+  document.querySelector(".controlLabel").classList.add("mobile");
 }
 
 const canvas = document.getElementById("app") as HTMLCanvasElement;

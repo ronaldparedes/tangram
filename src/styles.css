@@ -14,6 +14,7 @@ body {
 h1,
 h3 {
   font-family: "Indie Flower", cursive;
+  color: rgb(175, 41, 86);
   width: 100%;
   text-align: center;
   position: absolute;
@@ -21,46 +22,57 @@ h3 {
   transform: translateX(-50%);
 }
 h1 {
+  color: rgb(141, 24, 63);
   margin: 0;
   top: 0;
   transform: translate3d(-50%, 0, 0);
-  font-size: 5rem;
+  font-size: 4rem;
+}
+h3 span {
+  color: rgb(88, 7, 34);
 }
 h3 {
-  top: 100px;
+  top: 90px;
 }
 canvas {
   width: 100%;
   height: 100%;
   position: fixed;
+  z-index: 1;
+}
+.controlLabel {
+  top: initial;
+  bottom: 50px;
+  z-index: 0;
 }
 .controls {
   position: absolute;
   display: flex;
-  justify-content: space-around;
-  bottom: 20px;
+  justify-content: center;
+  bottom: 15px;
   width: 100%;
+  z-index: 10;
 }
 .mobile {
-  bottom: 100px;
+  bottom: 90px;
+}
+.mobile ~ .controlLabel {
+  padding-bottom: 40px;
 }
 button {
   appearance: none;
-  background-color: rgba(219, 112, 147, 0.4);
+  background-color: transparent;
+  padding: 0 10px 0 10px;
   border-radius: 10px;
-  border: 1px solid palevioletred;
-  height: auto;
+  border: 0px solid palevioletred;
+  height: 50px;
   width: auto;
-  font-size: 15px;
-  transition: color 200ms ease-in-out, background-color 200ms ease-in-out;
-  box-shadow: 0 4px 5px 0px rgba(0, 0, 0, 0.14),
-    0 1px 10px 0px rgba(0, 0, 0, 0.12), 0 5px 5px -3px rgba(0, 0, 0, 0.2);
+  font-size: 30px;
+  text-shadow: rgba(0, 0, 0, 0.7) 0 2px 4px;
+  transition: text-shadow 200ms ease-in-out, font-size 200ms ease-in-out;
 }
 button:hover {
   cursor: pointer;
-  color: palevioletred;
-  background-color: rgba(255, 239, 213, 0.4);
-}
-button span {
-  font-size: 20px;
+  text-shadow: rgba(0, 0, 0, 0.6) 0 5px 6px;
+  font-size: 35px;
 }
