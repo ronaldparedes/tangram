@@ -54,11 +54,12 @@ canvas {
   z-index: 10;
 }
 .mobile {
-  bottom: 90px;
+  top: calc(var(--vh, 1vh) * 90);
 }
 .mobile ~ .controlLabel {
-  padding-bottom: 40px;
+  top: calc(var(--vh, 1vh) * 85);
 }
+
 button {
   appearance: none;
   background-color: transparent;

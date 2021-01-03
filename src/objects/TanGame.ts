@@ -16,7 +16,6 @@ export default class TanGame {
   unit: number;
   dpi: number;
   isAnimating: boolean = false;
-  initialLayout = [];
   constructor(canvasElem: HTMLCanvasElement, unit: number) {
     this.dpi = window.devicePixelRatio;
     if (typeof window.orientation !== "undefined") {
@@ -251,7 +250,6 @@ export default class TanGame {
         .on("update", () => {
           shapeOp.shape.moveTo({ x: delta.x, y: delta.y });
         })
-        .on("complete", () => {})
         .start();
     });
   }

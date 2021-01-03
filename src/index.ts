@@ -3,7 +3,7 @@ import TanGame from "./objects/TanGame";
 // Prevent window from zooming.
 document.addEventListener(
   "touchmove",
-  e => {
+  (e) => {
     e.preventDefault();
   },
   { passive: false }
@@ -16,6 +16,10 @@ if (window.orientation !== undefined) {
 const canvas = document.getElementById("app") as HTMLCanvasElement;
 const tanGame = new TanGame(canvas, 398);
 tanGame.initGame();
+
+// Set viewport height for Mobile (for controls layout)
+const vh = window.innerHeight * 0.01;
+document.documentElement.style.setProperty("--vh", `${vh}px`);
 
 // Adjust Canvas size on window resize
 window.onresize = () => {
